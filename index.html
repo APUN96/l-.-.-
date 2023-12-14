@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Anonymous Posting with Codes, Search, and Like Button (Toggle Like/Unlike)</title>
+  <style>
+    /* Basic styling for the feed and posts */
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    .feed {
+      margin-top: 140px; /* Adjust to accommodate the fixed elements */
+      margin-bottom: 80px; /* Adjust to accommodate the fixed elements */
+      padding-bottom: 120px; /* Additional padding to prevent posts from being hidden */
+    }
+    .post {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .like-button {
+      margin-top: 5px;
+      cursor: pointer;
+      color: blue;
+    }
+    form {
+      margin-bottom: 20px;
+    }
+    textarea {
+      width: 100%;
+      margin-bottom: 10px;
+      resize: vertical;
+    }
+    .search-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: #fff;
+      padding: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      z-index: 999;
+    }
+    #postForm {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background-color: #fff;
+      padding: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      z-index: 999;
+    }
+
+    /* Overlay styles */
+    .overlay {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+    }
+
+    /* Popup styles */
+    .popup {
+      background-color: white;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+      text-align: center;
+    }
+    .unique-code {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <form id="postForm">
+    <textarea id="postContent" placeholder="Write your post here"></textarea>
+    <button type="submit">Post</button>
+  </form>
+
+  <div class="feed">
+    <!-- Posts will be displayed here -->
+  </div>
+
+  <div class="search-bar">
+    <label for="searchInput">Search by Code:</label>
+    <input type="text" id="searchInput" placeholder="Enter code...">
+    <button onclick="searchPosts()">Search</button>
+    <button onclick="resetSearch()">Reset</button>
+  
+  </div>
+
+  <!-- Popup container -->
+  <div class="overlay" id="overlay">
+    <div class="popup" id="popup">
+      <h2>Welcome to our website!</h2>
+      <p>This is a popup container in the center of the page.</p>
+      <button onclick="closePopup()">Close</button>
+     
+  </div>
+
+
+  <script>
+    // JavaScript code remains unchanged
+    let posts = []; // Array to store posts
+
+    // Function to generate a random alphanumeric code
+    function generateCode() {
+      return Math.random().toString(36).substring(2, 8); // Adjust the length as needed
+    }
+
+    // Function to display posts in the feed
+    function displayPosts() {
+      const feed = document.querySelector('.feed');
+      feed.innerHTML = ''; // Clear previous posts
+
+      posts.forEach((post, index) => {
+        const postElement = document.createElement('div');
+        postElement.classList.add('post');
+        postElement.innerHTML = `
+          <h3>Code: ${post.code}</h3>
+          <p>${post.content}</p>
+          <button class="like-button" onclick="toggleLike(${index})">${post.liked ? 'Unlike' : 'Like'}</button>
+          <span>${post.likes} likes</span>
+        `;
+        feed.appendChild(postElement);
+      });
+    }
+
+    // Function to handle form submission
+    document.getElementById('postForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      const postContent = document.getElementById('postContent').value;
+      const code = generateCode(); // Generate a code for the post
+      posts.push({ code: code, content: postContent, likes: 0, liked: false }); // Add post to the array with the code, initial likes, and liked status
+
+      displayPosts(); // Update the feed with the new post
+      document.getElementById('postContent').value = ''; // Clear the input field
+    });
+
+    // Function to handle toggling like/unlike for a post
+    function toggleLike(index) {
+      const post = posts[index];
+      if (post.liked) {
+        post.likes--; // Decrement likes if unliking
+      } else {
+        post.likes++; // Increment likes if liking
+      }
+      post.liked = !post.liked; // Toggle liked status
+      displayPosts(); // Update the feed with updated like status and count
+    }
+
+    // Function to search posts by code
+    function searchPosts() {
+      const searchInput = document.getElementById('searchInput').value.toLowerCase();
+      const filteredPosts = posts.filter(post => post.code.toLowerCase() === searchInput);
+
+      const feed = document.querySelector('.feed');
+      feed.innerHTML = ''; // Clear previous posts
+
+      filteredPosts.forEach(post => {
+        const postElement = document.createElement('div');
+        postElement.classList.add('post');
+        postElement.innerHTML = `
+          <h3>Code: ${post.code}</h3>
+          <p>${post.content}</p>
+          <button class="like-button" onclick="toggleLike(${posts.indexOf(post)})">${post.liked ? 'Unlike' : 'Like'}</button>
+          <span>${post.likes} likes</span>
+        `;
+        feed.appendChild(postElement);
+      });
+
+      // Save the recent search to localStorage
+      localStorage.setItem('recentSearch', searchInput);
+    }
+
+    // Function to reset the search and display all posts
+    function resetSearch() {
+      document.getElementById('searchInput').value = ''; // Clear search input
+      displayPosts(); // Display all posts
+
+      // Clear recent search from localStorage
+      localStorage.removeItem('recentSearch');
+    }
+
+    // Load recent search when the page loads
+    window.addEventListener('load', function() {
+      const recentSearch = localStorage.getItem('recentSearch');
+      if (recentSearch) {
+        document.getElementById('searchInput').value = recentSearch;
+        searchPosts();
+      } else {
+        displayPosts();
+      }
+      displayPopup(); // Show the popup when the page loads
+    });
+
+    // Function to display the popup container
+    function displayPopup() {
+      const overlay = document.getElementById('overlay');
+      const popup = document.getElementById('popup');
+
+      overlay.style.visibility = 'visible';
+      overlay.style.opacity = '1';
+      popup.style.visibility = 'visible';
+      popup.style.opacity = '1';
+    }
+
+    // Function to close the popup container
+    function closePopup() {
+      const overlay = document.getElementById('overlay');
+      const popup = document.getElementById('popup');
+
+      overlay.style.visibility = 'hidden';
+      overlay.style.opacity = '0';
+      popup.style.visibility = 'hidden';
+      popup.style.opacity = '0';
+    }
+  
+  </script>
+</body>
+</html>
+
